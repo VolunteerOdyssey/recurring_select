@@ -13,6 +13,7 @@ module RecurringSelect
       else
         params = params.symbolize_keys
         rules_hash = filter_params(params)
+        puts rules_hash.inspect
         IceCube::Rule.from_hash(rules_hash)
       end
 
@@ -78,6 +79,20 @@ module RecurringSelect
       params[:validations][:day_of_year] = params[:validations][:day_of_year].collect(&:to_i)
     end
 
+    if params[:count]
+      params[:count] = params[:count].to_i
+    end
+
+    if params[:until]
+      params[:until] = parse_date(params[:until])
+    end
+
     params
+  end
+
+  def parse_date(date_string)
+    Date.parse(date_string).to_time.utc.strftime("%Y%m%d") + "T000000Z"
+  rescue
+    nil
   end
 end
