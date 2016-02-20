@@ -20,6 +20,7 @@ window.RecurringSelectDialog =
       @positionDialogVert(true)
       @mainEventInit()
       @freqInit()
+      @endsOnInit()
       @summaryInit()
       @outer_holder.trigger "recurring_select:dialog_opened"
       @freq_select.focus()
@@ -70,6 +71,34 @@ window.RecurringSelectDialog =
       @content.on 'click tap', 'h1 a', @cancel
       @save_button = @content.find('input.rs_save').on "click tap", @save
       @content.find('input.rs_cancel').on "click tap", @cancel
+
+    endsOnInit: ->
+      @endsOnTypeRadio          = @outer_holder.find "input[name=rs_ends_on_type]"
+      @endsOnTypeOccurrences    = @endsOnTypeRadio.filter "[value=count]"
+      @endsOnTypeDate           = @endsOnTypeRadio.filter "[value=until]"
+      @endsOnOccurrencesSection = @outer_holder.find ".rs_ends_on_occurrences"
+      @endsOnDateSection        = @outer_holder.find ".rs_ends_on_date"
+      @endsOnOccurrencesInput   = @outer_holder.find "input[name=rs_ends_on_occurrences]"
+      @endsOnDateInput          = @outer_holder.find "input[name=rs_ends_on_date]"
+
+      ends_on_occurrences = @current_rule.hash?.count
+      ends_on_date        = @current_rule.hash?.until
+
+      if ends_on_occurrences?
+        @endsOnTypeOccurrences.prop('checked', true)
+        @endsOnOccurrencesInput.val(ends_on_occurrences)
+        @endsOnDateInput.val(null)
+        @endsOnDateSection.hide()
+      else
+        @endsOnTypeDate.prop('checked', true)
+        @endsOnDateInput.val(ends_on_date)
+        @endsOnOccurrencesInput.val(null)
+        @endsOnOccurrencesSection.hide()
+
+      @endsOnTypeRadio.on("change", @endsOnTypeChanged)
+      @endsOnDateInput.on("input", @endsOnDateChanged)
+      @endsOnOccurrencesInput.on("input", @endsOnOccurrencesChanged)
+
 
     freqInit: ->
       @freq_select = @outer_holder.find ".rs_frequency"
@@ -227,11 +256,9 @@ window.RecurringSelectDialog =
 
       @current_rule.hash ||= {}
       @current_rule.hash.interval = 1
-      @current_rule.hash.until = null
-      @current_rule.hash.count = null
       @current_rule.hash.validations = null
       @content.find(".freq_option_section").hide();
-      @content.find("input[type=radio], input[type=checkbox]").prop("checked", false)
+      @content.find("input[name=monthly_rule_type], input[type=checkbox]").prop("checked", false)
       switch @freq_select.val()
         when "Weekly"
           @current_rule.hash.rule_type = "IceCube::WeeklyRule"
@@ -282,6 +309,30 @@ window.RecurringSelectDialog =
       @current_rule.hash.validations.day_of_month = raw_days.get()
       @summaryUpdate()
       false
+
+    endsOnTypeChanged: (event) =>
+      @current_rule.hash ||= {}
+      type = @endsOnTypeRadio.filter(':checked').val();
+      if type == 'count'
+        @endsOnDateSection.hide()
+        @endsOnOccurrencesSection.show()
+        @current_rule.hash.until = null;
+        @current_rule.hash.count = @endsOnOccurrencesInput.val();
+      else
+        @endsOnDateSection.show()
+        @endsOnOccurrencesSection.hide()
+        @current_rule.hash.count = null;
+        @current_rule.hash.until = @endsOnDateInput.val();
+
+    endsOnOccurrencesChanged: (event) =>
+      @current_rule.hash ||= {}
+      @current_rule.hash.count = @endsOnOccurrencesInput.val()
+      @current_rule.hash.until = null
+
+    endsOnDateChanged: (event) =>
+      @current_rule.hash ||= {}
+      @current_rule.hash.until = @endsOnOccurrencesInput.val()
+      @current_rule.hash.count = null
 
     weekOfMonthChanged: (event) =>
       $(event.currentTarget).toggleClass("selected")
@@ -357,6 +408,31 @@ window.RecurringSelectDialog =
                 #{$.fn.recurring_select.texts["every"]}
                 <input type='text' data-wrapper-class='ui-recurring-select' name='rs_yearly_interval' class='rs_yearly_interval rs_interval' value='1' size='2' />
                 #{$.fn.recurring_select.texts["years"]}
+              </p>
+            </div>
+            <div class='end_options'>
+              <p class='rs_ends_on_type'>
+                #{$.fn.recurring_select.texts["ends_on"]}:
+                <label for='rs_ends_on_type_date'>
+                  #{$.fn.recurring_select.texts["date"]}
+                  <input type='radio' class='rs_ends_on_type' name='rs_ends_on_type' id='rs_ends_on_type_date' value='until' />
+                </label>
+                <label for='rs_ends_on_type_occurrences'>
+                  #{$.fn.recurring_select.texts["occurrences"]}
+                  <input type='radio' class='rs_ends_on_type_day' name='rs_ends_on_type' id='rs_ends_on_type_occurrences' value='count' />
+                </label>
+              </p>
+              <p class='rs_ends_on_occurrences'>
+                <label for='rs_ends_on_occurrences'>
+                  #{$.fn.recurring_select.texts["occurrences"]}
+                </label>
+                <input type='number' name='rs_ends_on_occurrences' id='rs_ends_on_occurrences' value='10'>
+              </p>
+              <p class='rs_ends_on_date'>
+                <label for='rs_ends_on_date'>
+                  #{$.fn.recurring_select.texts["date"]}
+                </label>
+                <input type='text' name='rs_ends_on_date' id='rs_ends_on_date'>
               </p>
             </div>
             <p class='rs_summary'>

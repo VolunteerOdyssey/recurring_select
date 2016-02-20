@@ -81,9 +81,9 @@ $.fn.recurring_select.options = {
 
 $.fn.recurring_select.texts = {
   locale_iso_code: "en"
-  repeat: "Repeat"
+  repeat: "Recurrence Schedule"
   last_day: "Last Day"
-  frequency: "Frequency"
+  frequency: "Repeats"
   daily: "Daily"
   weekly: "Weekly"
   monthly: "Monthly"
@@ -98,6 +98,9 @@ $.fn.recurring_select.texts = {
   cancel: "Cancel"
   ok: "OK"
   summary: "Summary"
+  ends_on: "Ends On"
+  date: "Date"
+  occurrences: "Number of Occurrences"
   first_day_of_week: 0
   days_first_letter: ["S", "M", "T", "W", "T", "F", "S" ]
   order: ["1st", "2nd", "3rd", "4th", "5th", "Last"]
