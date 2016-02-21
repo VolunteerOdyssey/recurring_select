@@ -87,18 +87,25 @@ window.RecurringSelectDialog =
       if ends_on_occurrences?
         @endsOnTypeOccurrences.prop('checked', true)
         @endsOnOccurrencesInput.val(ends_on_occurrences)
-        @endsOnDateInput.val(null)
         @endsOnDateSection.hide()
       else
+        if !ends_on_date?
+          date = new Date()
+          date.setMonth(date.getMonth() + 6)
+          ends_on_date = "#{date.getFullYear()}-#{date.getMonth()}-#{date.getDay()}"
+          @current_rule.hash ||= {}
+          @current_rule.hash.until = ends_on_date
+
         @endsOnTypeDate.prop('checked', true)
         @endsOnDateInput.val(ends_on_date)
-        @endsOnOccurrencesInput.val(null)
         @endsOnOccurrencesSection.hide()
 
-      @endsOnTypeRadio.on("change", @endsOnTypeChanged)
-      @endsOnDateInput.on("input", @endsOnDateChanged)
-      @endsOnOccurrencesInput.on("input", @endsOnOccurrencesChanged)
+      if @endsOnDateInput.datepicker?
+        @endsOnDateInput.datepicker({dateFormat: "yy-mm-dd"})
 
+      @endsOnTypeRadio.on("change", @endsOnTypeChanged)
+      @endsOnDateInput.on("change input", @endsOnDateChanged)
+      @endsOnOccurrencesInput.on("change input", @endsOnOccurrencesChanged)
 
     freqInit: ->
       @freq_select = @outer_holder.find ".rs_frequency"
@@ -179,7 +186,7 @@ window.RecurringSelectDialog =
 
     summaryUpdate: (new_string) =>
       @summary.width @content.width()
-      if @current_rule.hash? && @current_rule.str?
+      if @current_rule.hash? && @current_rule.str? && @current_rule.str != "- not recurring -"
         @summary.removeClass "fetching"
         @save_button.removeClass("disabled")
         rule_str = @current_rule.str.replace("*", "")
@@ -262,19 +269,15 @@ window.RecurringSelectDialog =
       switch @freq_select.val()
         when "Weekly"
           @current_rule.hash.rule_type = "IceCube::WeeklyRule"
-          @current_rule.str = $.fn.recurring_select.texts["weekly"]
           @initWeeklyOptions()
         when "Monthly"
           @current_rule.hash.rule_type = "IceCube::MonthlyRule"
-          @current_rule.str = $.fn.recurring_select.texts["monthly"]
           @initMonthlyOptions()
         when "Yearly"
           @current_rule.hash.rule_type = "IceCube::YearlyRule"
-          @current_rule.str = $.fn.recurring_select.texts["yearly"]
           @initYearlyOptions()
         else
           @current_rule.hash.rule_type = "IceCube::DailyRule"
-          @current_rule.str = $.fn.recurring_select.texts["daily"]
           @initDailyOptions()
       @summaryUpdate()
       @positionDialogVert()
@@ -311,7 +314,6 @@ window.RecurringSelectDialog =
       false
 
     endsOnTypeChanged: (event) =>
-      @current_rule.hash ||= {}
       type = @endsOnTypeRadio.filter(':checked').val();
       if type == 'count'
         @endsOnDateSection.hide()
@@ -323,16 +325,19 @@ window.RecurringSelectDialog =
         @endsOnOccurrencesSection.hide()
         @current_rule.hash.count = null;
         @current_rule.hash.until = @endsOnDateInput.val();
+      @summaryFetch()
+      @summaryUpdate()
 
     endsOnOccurrencesChanged: (event) =>
       @current_rule.hash ||= {}
       @current_rule.hash.count = @endsOnOccurrencesInput.val()
-      @current_rule.hash.until = null
+      @summaryFetch()
+      @summaryUpdate()
 
     endsOnDateChanged: (event) =>
-      @current_rule.hash ||= {}
-      @current_rule.hash.until = @endsOnOccurrencesInput.val()
-      @current_rule.hash.count = null
+      @current_rule.hash.until = @endsOnDateInput.val()
+      @summaryFetch()
+      @summaryUpdate()
 
     weekOfMonthChanged: (event) =>
       $(event.currentTarget).toggleClass("selected")
@@ -414,23 +419,23 @@ window.RecurringSelectDialog =
               <p class='rs_ends_on_type'>
                 #{$.fn.recurring_select.texts["ends_on"]}:
                 <label for='rs_ends_on_type_date'>
-                  #{$.fn.recurring_select.texts["date"]}
+                  <b>#{$.fn.recurring_select.texts["date"]}</b>
                   <input type='radio' class='rs_ends_on_type' name='rs_ends_on_type' id='rs_ends_on_type_date' value='until' />
                 </label>
                 <label for='rs_ends_on_type_occurrences'>
-                  #{$.fn.recurring_select.texts["occurrences"]}
+                  <b>#{$.fn.recurring_select.texts["occurrences"]}</b>
                   <input type='radio' class='rs_ends_on_type_day' name='rs_ends_on_type' id='rs_ends_on_type_occurrences' value='count' />
                 </label>
               </p>
               <p class='rs_ends_on_occurrences'>
                 <label for='rs_ends_on_occurrences'>
-                  #{$.fn.recurring_select.texts["occurrences"]}
+                  #{$.fn.recurring_select.texts["occurrences"]}:
                 </label>
-                <input type='number' name='rs_ends_on_occurrences' id='rs_ends_on_occurrences' value='10'>
+                <input type='number' name='rs_ends_on_occurrences' id='rs_ends_on_occurrences' value=20>
               </p>
               <p class='rs_ends_on_date'>
                 <label for='rs_ends_on_date'>
-                  #{$.fn.recurring_select.texts["date"]}
+                  #{$.fn.recurring_select.texts["date"]}:
                 </label>
                 <input type='text' name='rs_ends_on_date' id='rs_ends_on_date'>
               </p>
